@@ -5,7 +5,6 @@ namespace HexChestHacks.Core
 {
     internal static class SnappointService
     {
-        private const string BarrelPrefab = "piece_chest_barrel";
         private const string TreasureChestPrefab = "piece_chest_treasure";
 
         private static readonly HashSet<string> SupportedPrefabs = new HashSet<string>
@@ -60,6 +59,8 @@ namespace HexChestHacks.Core
 
                 Plugin.Log.LogInfo($"Supported storage prefab: {chest.name}");
 
+                DisableSupportDamage(prefab);
+
                 if (HasSnappoints(chest.transform))
                 {
                     continue;
@@ -72,14 +73,9 @@ namespace HexChestHacks.Core
                 }
 
                 AddChestSnappoints(chest.transform, bounds);
+                AddVerticalSnappoints(chest.transform, bounds);
 
-                // Barrels can also snap vertically to stack on top of each other.
-                if (prefab.name == BarrelPrefab)
-                {
-                    AddBarrelSnappoints(chest.transform, bounds);
-                }
-
-                Plugin.Log.LogInfo($"Added snap points to {chest.name}.");
+                Plugin.Log.LogInfo($"Added 6 snap points to {chest.name}.");
                 added++;
             }
 
@@ -109,8 +105,8 @@ namespace HexChestHacks.Core
             CreateSnappoint(root, "bottom_right", new Vector3(bounds.max.x, 0f, bounds.min.z));
         }
 
-        // Create two additional snap points for stacking barrels vertically.
-        private static void AddBarrelSnappoints(Transform root, Bounds bounds)
+        // Create two additional snap points for stacking chests vertically.
+        private static void AddVerticalSnappoints(Transform root, Bounds bounds)
         {
             CreateSnappoint(root, "top_center", new Vector3(bounds.center.x, bounds.max.y, bounds.center.z));
             CreateSnappoint(root, "bottom_center", new Vector3(bounds.center.x, bounds.min.y, bounds.center.z));
@@ -209,6 +205,18 @@ namespace HexChestHacks.Core
 
             snappoint.tag = "snappoint";
             snappoint.layer = LayerMask.NameToLayer("piece");
+        }
+
+        // This allows chests to be stacked ontop of each other
+        private static void DisableSupportDamage(GameObject prefab)
+        {
+            var wearNTear = prefab.GetComponent<WearNTear>();
+
+            if (wearNTear != null)
+            {
+                wearNTear.m_noSupportWear = false;
+                wearNTear.m_supports = true;
+            }
         }
     }
 }
