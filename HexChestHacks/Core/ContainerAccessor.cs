@@ -1,0 +1,31 @@
+﻿using HarmonyLib;
+
+namespace HexChestHacks.Core
+{
+    internal static class ContainerAccessor
+    {
+        private static readonly AccessTools.FieldRef<Container, Inventory> InventoryField =
+            AccessTools.FieldRefAccess<Container, Inventory>("m_inventory");
+
+        private static readonly AccessTools.FieldRef<Container, ZNetView> NetViewField =
+            AccessTools.FieldRefAccess<Container, ZNetView>("m_nview");
+
+        private static readonly AccessTools.FieldRef<Container, int> WidthField =
+            AccessTools.FieldRefAccess<Container, int>("m_width");
+
+        private static readonly AccessTools.FieldRef<Container, int> HeightField =
+            AccessTools.FieldRefAccess<Container, int>("m_height");
+
+        internal static Inventory GetInventory(Container container) => container.GetInventory();
+
+        internal static ZNetView GetNetView(Container container) => NetViewField(container);
+
+        internal static int GetWidth(Container container) => WidthField(container);
+
+        internal static int GetHeight(Container container) => HeightField(container);
+
+        internal static void SetWidth(Container container, int width) => WidthField(container) = width;
+
+        internal static void SetHeight(Container container, int height) => HeightField(container) = height;
+    }
+}

@@ -35,6 +35,10 @@
       <HintPath>..\..\..\bepinex_mod_libs\0Harmony.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="assembly_utils_publicized">
+      <HintPath>..\..\..\publicized_assemblies\v1.0.17\assembly_utils_publicized.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="assembly_valheim_publicized">
       <HintPath>..\..\..\publicized_assemblies\v1.0.17\assembly_valheim_publicized.dll</HintPath>
       <Private>False</Private>
@@ -59,9 +63,25 @@
       <HintPath>..\..\..\valheim_mod_libraries\UnityEngine.CoreModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>..\..\..\valheim_mod_libraries\UnityEngine.UI.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UIModule">
+      <HintPath>..\..\..\valheim_mod_libraries\UnityEngine.UIModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Core\Constants.cs" />
+    <Compile Include="Core\ContainerAccessor.cs" />
+    <Compile Include="Core\ContainerService.cs" />
+    <Compile Include="Core\InventoryAccessor.cs" />
+    <Compile Include="Core\InventoryGridAccessor.cs" />
+    <Compile Include="Core\InventoryGuiAccessor.cs" />
     <Compile Include="Core\SnappointService.cs" />
+    <Compile Include="Patches\ContainerInventoryUiPatch.cs" />
+    <Compile Include="Patches\ContainerPatch.cs" />
     <Compile Include="Patches\ZNetScenePatch.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

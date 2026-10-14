@@ -5,37 +5,11 @@ namespace HexChestHacks.Core
 {
     internal static class SnappointService
     {
-        private const string TreasureChestPrefab = "piece_chest_treasure";
-
-        private static readonly HashSet<string> SupportedPrefabs = new HashSet<string>
-        {
-            "piece_chest_wood",
-            "piece_chest",
-            "piece_chest_blackmetal",
-            "piece_chest_grausten",
-            "piece_chest_private",
-            "piece_chest_barrel",
-            "piece_chest_warderobe",
-            "piece_chest_treasure"
-        };
-
-        internal static bool IsSupportedChest(string prefabName)
-        {
-            if (string.IsNullOrEmpty(prefabName))
-            {
-                return false;
-            }
-
-            var name = prefabName.Replace("(Clone)", "").Trim();
-
-            return SupportedPrefabs.Contains(name);
-        }
-
         internal static void AddSnappoints(ZNetScene zNetScene)
         {
             foreach (var prefab in zNetScene.m_prefabs)
             {
-                if (prefab == null || !IsSupportedChest(prefab.name))
+                if (prefab == null || !Constants.IsSupportedChest(prefab.name))
                 {
                     continue;
                 }
@@ -48,7 +22,7 @@ namespace HexChestHacks.Core
                 }
 
                 // Treasure chests do not have a Container component.
-                if (prefab.name != TreasureChestPrefab && prefab.GetComponent<Container>() == null)
+                if (prefab.name != Constants.TreasureChestPrefab && prefab.GetComponent<Container>() == null)
                 {
                     continue;
                 }
