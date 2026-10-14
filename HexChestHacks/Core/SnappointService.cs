@@ -33,8 +33,6 @@ namespace HexChestHacks.Core
 
         internal static void AddSnappoints(ZNetScene zNetScene)
         {
-            var added = 0;
-
             foreach (var prefab in zNetScene.m_prefabs)
             {
                 if (prefab == null || !IsSupportedChest(prefab.name))
@@ -46,18 +44,14 @@ namespace HexChestHacks.Core
 
                 if (chest == null)
                 {
-                    Plugin.Log.LogWarning($"No Piece component found: {prefab.name}");
                     continue;
                 }
 
                 // Treasure chests do not have a Container component.
                 if (prefab.name != TreasureChestPrefab && prefab.GetComponent<Container>() == null)
                 {
-                    Plugin.Log.LogWarning($"No Container component found: {prefab.name}");
                     continue;
                 }
-
-                Plugin.Log.LogInfo($"Supported storage prefab: {chest.name}");
 
                 DisableSupportDamage(prefab);
 
@@ -74,12 +68,7 @@ namespace HexChestHacks.Core
 
                 AddChestSnappoints(chest.transform, bounds);
                 AddVerticalSnappoints(chest.transform, bounds);
-
-                Plugin.Log.LogInfo($"Added 6 snap points to {chest.name}.");
-                added++;
             }
-
-            Plugin.Log.LogInfo($"Configured {added} storage prefabs.");
         }
 
         // Avoid adding duplicate snap points to pieces that already have them.
