@@ -1,5 +1,4 @@
-﻿
-using HarmonyLib;
+﻿using HarmonyLib;
 using HexChestHacks.Core;
 
 namespace HexChestHacks.Patches
