@@ -74,6 +74,32 @@ namespace HexChestHacks.Core
                 InventoryAccessor.GetHeight(inventory));
         }
 
+        internal static bool HasPendingShrink(Container container)
+        {
+            if (container == null ||
+                !TryGetDefaultCapacity(container, out var defaultWidth, out var defaultHeight))
+            {
+                return false;
+            }
+
+            var inventory = ContainerAccessor.GetInventory(container);
+
+            if (inventory == null)
+            {
+                return false;
+            }
+
+            var columns = Plugin.EnableCustomChestCapacity.Value ? Plugin.Columns.Value : defaultWidth;
+            var rows = Plugin.EnableCustomChestCapacity.Value ? Plugin.Rows.Value : defaultHeight;
+
+            var currentWidth = InventoryAccessor.GetWidth(inventory);
+            var currentHeight = InventoryAccessor.GetHeight(inventory);
+
+            var shrinking = columns < currentWidth || rows < currentHeight;
+
+            return shrinking && InventoryAccessor.GetItems(inventory).Count > 0;
+        }
+
         internal static bool RestoreSavedCapacity(Container container)
         {
             if (container == null || !Constants.IsSupportedChest(container.name))
@@ -221,9 +247,6 @@ namespace HexChestHacks.Core
 
             if (shrinking && InventoryAccessor.GetItems(inventory).Count > 0)
             {
-                Plugin.Log.LogInfo($"Cannot shrink {container.name}: chest is not empty.");
-                Plugin.NotifyChestShrinkRejected();
-
                 return false;
             }
 

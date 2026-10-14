@@ -79,6 +79,7 @@
     <Compile Include="Core\InventoryAccessor.cs" />
     <Compile Include="Core\InventoryGridAccessor.cs" />
     <Compile Include="Core\InventoryGuiAccessor.cs" />
+    <Compile Include="Core\LoadedContainerService.cs" />
     <Compile Include="Core\SnappointService.cs" />
     <Compile Include="Patches\ContainerInventoryUiPatch.cs" />
     <Compile Include="Patches\ContainerPatch.cs" />

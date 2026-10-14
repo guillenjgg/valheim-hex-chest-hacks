@@ -1,4 +1,5 @@
-﻿using HarmonyLib;
+﻿
+using HarmonyLib;
 
 namespace HexChestHacks.Core
 {
@@ -9,6 +10,12 @@ namespace HexChestHacks.Core
         private static void Prefix(Container __instance)
         {
             ContainerService.RegisterDefaultCapacity(__instance);
+        }
+
+        [HarmonyPostfix]
+        private static void Postfix(Container __instance)
+        {
+            LoadedContainerService.Register(__instance);
         }
     }
 
@@ -40,6 +47,43 @@ namespace HexChestHacks.Core
 
             ContainerService.InitializeSavedCapacity(__instance);
             ContainerService.ApplyConfiguredCapacity(__instance);
+        }
+    }
+
+    [HarmonyPatch(typeof(Container), nameof(Container.OnContainerChanged))]
+    internal static class ContainerChangedPatch
+    {
+        [HarmonyPostfix]
+        private static void Postfix(Container __instance)
+        {
+            var nview = ContainerAccessor.GetNetView(__instance);
+
+            if (nview == null || !nview.IsValid() || !nview.IsOwner())
+            {
+                return;
+            }
+
+            if (ContainerService.HasPendingShrink(__instance))
+            {
+                ContainerService.ApplyConfiguredCapacity(__instance);
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(Container), nameof(Container.Interact))]
+    internal static class ContainerInteractPatch
+    {
+        [HarmonyPrefix]
+        private static void Prefix(Container __instance, bool hold)
+        {
+            if (hold || !ContainerService.HasPendingShrink(__instance))
+            {
+                return;
+            }
+
+            MessageHud.instance?.ShowMessage(
+                MessageHud.MessageType.Center,
+                "Chest cannot shrink until all items are removed.");
         }
     }
 }

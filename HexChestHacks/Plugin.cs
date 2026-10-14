@@ -3,6 +3,7 @@ using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
+using HexChestHacks.Core;
 using System;
 using System.Reflection;
 
@@ -78,6 +79,8 @@ namespace HexChestHacks
             _harmonyInstance?.UnpatchSelf();
             _harmonyInstance = null;
 
+            LoadedContainerService.Clear();
+
             Log.LogInfo($"{PluginName} v{PluginVersion} unloaded.");
 
             Instance = null;
@@ -89,6 +92,8 @@ namespace HexChestHacks
             _configurationRevision++;
 
             Log.LogInfo($"Chest capacity configuration changed. Enabled: {EnableCustomChestCapacity.Value}, Rows: {Rows.Value}, Columns: {Columns.Value}");
+
+            LoadedContainerService.ApplyConfiguration();
         }
 
         internal static void NotifyChestShrinkRejected()
