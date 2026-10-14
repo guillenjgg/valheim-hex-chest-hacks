@@ -62,6 +62,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Core\SnappointService.cs" />
+    <Compile Include="Patches\ContainerPatch.cs" />
     <Compile Include="Patches\ZNetScenePatch.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

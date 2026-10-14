@@ -5,134 +5,171 @@ namespace HexChestHacks.Core
 {
     internal static class SnappointService
     {
-        private static readonly HashSet<string> SupportedChestPrefabs = new HashSet<string>
+        private const string BarrelPrefab = "piece_chest_barrel";
+        private const string TreasureChestPrefab = "piece_chest_treasure";
+
+        private static readonly HashSet<string> SupportedPrefabs = new HashSet<string>
         {
-            "piece_chest_wood"
+            "piece_chest_wood",
+            "piece_chest",
+            "piece_chest_blackmetal",
+            "piece_chest_grausten",
+            "piece_chest_private",
+            "piece_chest_barrel",
+            "piece_chest_warderobe",
+            "piece_chest_treasure"
         };
 
-        internal static List<Piece> SupportedChests { get; } = new List<Piece>();
-
-        internal static List<Piece> GetSupportedChests(ZNetScene zNetScene)
+        internal static bool IsSupportedChest(string prefabName)
         {
-            SupportedChests.Clear();
-
-            foreach (var prefab in zNetScene.m_prefabs)
+            if (string.IsNullOrEmpty(prefabName))
             {
-                if (prefab == null || !SupportedChestPrefabs.Contains(prefab.name))
-                {
-                    continue;
-                }
-
-                var piece = prefab.GetComponent<Piece>();
-                var container = prefab.GetComponent<Container>();
-
-                if (piece == null || container == null)
-                {
-                    continue;
-                }
-
-                SupportedChests.Add(piece);
+                return false;
             }
 
-            Plugin.Log.LogInfo($"Supported chest prefabs found: {SupportedChests.Count}");
+            var name = prefabName.Replace("(Clone)", "").Trim();
 
-            return SupportedChests;
+            return SupportedPrefabs.Contains(name);
         }
 
         internal static void AddSnappoints(ZNetScene zNetScene)
         {
-            var chests = GetSupportedChests(zNetScene);
+            var added = 0;
 
-            foreach (var chest in chests)
+            foreach (var prefab in zNetScene.m_prefabs)
             {
-                var existingSnappoints = new List<Transform>();
-                chest.GetSnapPoints(existingSnappoints);
-
-                if (existingSnappoints.Count > 0)
+                if (prefab == null || !IsSupportedChest(prefab.name))
                 {
-                    Plugin.Log.LogInfo($"Skipping {chest.name}: already has snap points.");
                     continue;
                 }
 
-                if (!TryGetMeshBounds(chest, out var bounds))
+                var chest = prefab.GetComponent<Piece>();
+
+                if (chest == null)
                 {
-                    Plugin.Log.LogWarning($"Skipping {chest.name}: no visible meshes found.");
+                    Plugin.Log.LogWarning($"No Piece component found: {prefab.name}");
                     continue;
                 }
 
-                Plugin.Log.LogInfo(
-                    $"Chest: {chest.name} | Bounds Min: {bounds.min} | Bounds Max: {bounds.max}");
+                // Treasure chests do not have a Container component.
+                if (prefab.name != TreasureChestPrefab && prefab.GetComponent<Container>() == null)
+                {
+                    Plugin.Log.LogWarning($"No Container component found: {prefab.name}");
+                    continue;
+                }
 
-                CreateSnappoint(chest, "$hud_snappoint_top_left",
-                    new Vector3(bounds.min.x, 0f, bounds.max.z));
+                Plugin.Log.LogInfo($"Supported storage prefab: {chest.name}");
 
-                CreateSnappoint(chest, "$hud_snappoint_top_right",
-                    new Vector3(bounds.max.x, 0f, bounds.max.z));
+                if (HasSnappoints(chest.transform))
+                {
+                    continue;
+                }
 
-                CreateSnappoint(chest, "$hud_snappoint_bottom_left",
-                    new Vector3(bounds.min.x, 0f, bounds.min.z));
+                if (!TryGetMeshBounds(chest.transform, out var bounds))
+                {
+                    Plugin.Log.LogWarning($"No visible meshes found: {chest.name}");
+                    continue;
+                }
 
-                CreateSnappoint(chest, "$hud_snappoint_bottom_right",
-                    new Vector3(bounds.max.x, 0f, bounds.min.z));
+                AddChestSnappoints(chest.transform, bounds);
 
-                Plugin.Log.LogInfo($"Added 4 snap points to {chest.name}.");
+                // Barrels can also snap vertically to stack on top of each other.
+                if (prefab.name == BarrelPrefab)
+                {
+                    AddBarrelSnappoints(chest.transform, bounds);
+                }
+
+                Plugin.Log.LogInfo($"Added snap points to {chest.name}.");
+                added++;
             }
+
+            Plugin.Log.LogInfo($"Configured {added} storage prefabs.");
         }
 
-        private static bool TryGetMeshBounds(Piece chest, out Bounds bounds)
+        // Avoid adding duplicate snap points to pieces that already have them.
+        private static bool HasSnappoints(Transform root)
+        {
+            foreach (Transform child in root)
+            {
+                if (child.CompareTag("snappoint"))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // Create four snap points at the corners of the chest's.
+        private static void AddChestSnappoints(Transform root, Bounds bounds)
+        {
+            CreateSnappoint(root, "top_left", new Vector3(bounds.min.x, 0f, bounds.max.z));
+            CreateSnappoint(root, "top_right", new Vector3(bounds.max.x, 0f, bounds.max.z));
+            CreateSnappoint(root, "bottom_left", new Vector3(bounds.min.x, 0f, bounds.min.z));
+            CreateSnappoint(root, "bottom_right", new Vector3(bounds.max.x, 0f, bounds.min.z));
+        }
+
+        // Create two additional snap points for stacking barrels vertically.
+        private static void AddBarrelSnappoints(Transform root, Bounds bounds)
+        {
+            CreateSnappoint(root, "top_center", new Vector3(bounds.center.x, bounds.max.y, bounds.center.z));
+            CreateSnappoint(root, "bottom_center", new Vector3(bounds.center.x, bounds.min.y, bounds.center.z));
+        }
+
+        // I had to reference the Unity API documenation to figure out how to calculate the bounds
+        // https://docs.unity3d.com/6000.0/Documentation/ScriptReference/Mesh.html
+        private static bool TryGetMeshBounds(Transform root, out Bounds bounds)
         {
             bounds = new Bounds();
             var found = false;
 
-            var meshFilters = chest.GetComponentsInChildren<MeshFilter>(true);
-
-            foreach (var meshFilter in meshFilters)
+            foreach (var meshFilter in root.GetComponentsInChildren<MeshFilter>(true))
             {
-                if (!meshFilter.gameObject.activeSelf)
+                // Ignore inactive meshes, such as an open chest lid.
+                if (!IsMeshActive(meshFilter.transform, root))
                 {
                     continue;
                 }
 
+                // Only include meshes that are actually rendered.
                 var renderer = meshFilter.GetComponent<MeshRenderer>();
 
-                if (renderer == null || !renderer.enabled)
+                if (renderer == null || !renderer.enabled || meshFilter.sharedMesh == null)
                 {
                     continue;
                 }
 
-                var mesh = meshFilter.sharedMesh;
+                Bounds meshBounds = meshFilter.sharedMesh.bounds;
 
-                if (mesh == null)
+                // A 3D box has eight corners.
+                // We must account for mesh rotation, position, and scale.
+                var meshCorners = new Vector3[]
                 {
-                    continue;
-                }
+                    new Vector3(meshBounds.min.x, meshBounds.min.y, meshBounds.min.z),
+                    new Vector3(meshBounds.min.x, meshBounds.min.y, meshBounds.max.z),
+                    new Vector3(meshBounds.min.x, meshBounds.max.y, meshBounds.min.z),
+                    new Vector3(meshBounds.min.x, meshBounds.max.y, meshBounds.max.z),
+                    new Vector3(meshBounds.max.x, meshBounds.min.y, meshBounds.min.z),
+                    new Vector3(meshBounds.max.x, meshBounds.min.y, meshBounds.max.z),
+                    new Vector3(meshBounds.max.x, meshBounds.max.y, meshBounds.min.z),
+                    new Vector3(meshBounds.max.x, meshBounds.max.y, meshBounds.max.z)
+                };
 
-                var meshBounds = mesh.bounds;
+                Matrix4x4 meshToChest = root.worldToLocalMatrix * meshFilter.transform.localToWorldMatrix;
 
-                for (var x = 0; x < 2; x++)
+                foreach (var meshCorner in meshCorners)
                 {
-                    for (var y = 0; y < 2; y++)
+                    var chestLocalPosition = meshToChest.MultiplyPoint3x4(meshCorner);
+
+                    // Start with the first corner, then expand to include the others.
+                    if (!found)
                     {
-                        for (var z = 0; z < 2; z++)
-                        {
-                            var corner = new Vector3(
-                                x == 0 ? meshBounds.min.x : meshBounds.max.x,
-                                y == 0 ? meshBounds.min.y : meshBounds.max.y,
-                                z == 0 ? meshBounds.min.z : meshBounds.max.z);
-
-                            var worldPosition = meshFilter.transform.TransformPoint(corner);
-                            var localPosition = chest.transform.InverseTransformPoint(worldPosition);
-
-                            if (!found)
-                            {
-                                bounds = new Bounds(localPosition, Vector3.zero);
-                                found = true;
-                            }
-                            else
-                            {
-                                bounds.Encapsulate(localPosition);
-                            }
-                        }
+                        bounds = new Bounds(chestLocalPosition, Vector3.zero);
+                        found = true;
+                    }
+                    else
+                    {
+                        bounds.Encapsulate(chestLocalPosition);
                     }
                 }
             }
@@ -140,18 +177,38 @@ namespace HexChestHacks.Core
             return found;
         }
 
-        private static void CreateSnappoint(Piece chest, string name, Vector3 position)
+        // Check whether a mesh and its parents are enabled.
+        // Ignore the prefab root because Valheim may keep prefabs inactive.
+        private static bool IsMeshActive(Transform transform, Transform root)
         {
-            var snappoint = new GameObject(name);
+            while (transform != root)
+            {
+                if (!transform.gameObject.activeSelf)
+                {
+                    return false;
+                }
 
-            snappoint.transform.SetParent(chest.transform, false);
+                transform = transform.parent;
+
+                if (transform == null)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        // Valheim discovers snap points by their "snappoint" tag.
+        private static void CreateSnappoint(Transform root, string name, Vector3 position)
+        {
+            var snappoint = new GameObject($"$hud_snappoint_{name}");
+
+            snappoint.transform.SetParent(root, false);
             snappoint.transform.localPosition = position;
-            snappoint.transform.localRotation = Quaternion.identity;
 
             snappoint.tag = "snappoint";
             snappoint.layer = LayerMask.NameToLayer("piece");
-
-            Plugin.Log.LogInfo($"  {name}: {position}");
         }
     }
 }
