@@ -1,7 +1,7 @@
 ﻿using HarmonyLib;
 using System.Collections.Generic;
 
-namespace HexChestHacks.Core
+namespace HexChestHacks.Core.ReflectionAccessors
 {
     internal static class InventoryAccessor
     {

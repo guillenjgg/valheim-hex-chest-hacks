@@ -1,7 +1,6 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
-namespace HexChestHacks.Core
+namespace HexChestHacks.Core.Services
 {
     internal static class SnappointService
     {

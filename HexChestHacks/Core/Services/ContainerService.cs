@@ -1,33 +1,61 @@
-﻿
+﻿using HexChestHacks.Core.ReflectionAccessors;
 using System.Collections.Generic;
+using UnityEngine;
 
-namespace HexChestHacks.Core
+namespace HexChestHacks.Core.Services
 {
     internal static class ContainerService
     {
         private const string WidthKey = "HexChestHacks_Width";
         private const string HeightKey = "HexChestHacks_Height";
+        private const string WardrobePrefabName = "piece_chest_warderobe";
 
         private const int MinimumCapacity = 1;
-        private const int MaximumCapacity = 8;
+        private const int MaximumCapacity = 10;
 
-        private static readonly Dictionary<string, (int Width, int Height)> DefaultCapacities =
-            new Dictionary<string, (int Width, int Height)>();
+        private static readonly Dictionary<string, Vector2Int> DefaultCapacities =
+            new Dictionary<string, Vector2Int>();
 
-        internal static void RegisterDefaultCapacity(Container container)
+        internal static void CacheDefaultCapacities(ZNetScene scene)
         {
-            if (container == null || !Constants.IsSupportedChest(container.name))
+            if (scene == null)
             {
                 return;
             }
 
-            var prefabName = container.name.Replace("(Clone)", "").Trim();
-
-            if (!DefaultCapacities.ContainsKey(prefabName))
+            foreach (var prefab in scene.m_prefabs)
             {
-                DefaultCapacities[prefabName] = (
-                    ContainerAccessor.GetWidth(container),
-                    ContainerAccessor.GetHeight(container));
+                if (prefab == null || !Constants.IsSupportedChest(prefab.name))
+                {
+                    continue;
+                }
+
+                var container = prefab.GetComponent<Container>();
+
+                if (container == null)
+                {
+                    continue;
+                }
+
+                var prefabName = NormalizePrefabName(prefab.name);
+
+                if (DefaultCapacities.ContainsKey(prefabName))
+                {
+                    continue;
+                }
+
+                var width = ContainerAccessor.GetWidth(container);
+                var height = ContainerAccessor.GetHeight(container);
+
+                if (!IsValidCapacity(width, height))
+                {
+                    Plugin.Log.LogWarning($"Invalid default capacity for {prefabName}: {width}x{height}");
+                    continue;
+                }
+
+                DefaultCapacities[prefabName] = new Vector2Int(width, height);
+
+                Plugin.Log.LogInfo($"Cached default chest capacity: {prefabName} | {width}x{height}");
             }
         }
 
@@ -41,15 +69,15 @@ namespace HexChestHacks.Core
                 return false;
             }
 
-            var prefabName = container.name.Replace("(Clone)", "").Trim();
+            var prefabName = NormalizePrefabName(container.name);
 
             if (!DefaultCapacities.TryGetValue(prefabName, out var capacity))
             {
                 return false;
             }
 
-            width = capacity.Width;
-            height = capacity.Height;
+            width = capacity.x;
+            height = capacity.y;
 
             return true;
         }
@@ -89,8 +117,7 @@ namespace HexChestHacks.Core
                 return false;
             }
 
-            var columns = Plugin.EnableCustomChestCapacity.Value ? Plugin.Columns.Value : defaultWidth;
-            var rows = Plugin.EnableCustomChestCapacity.Value ? Plugin.Rows.Value : defaultHeight;
+            GetTargetCapacity(container, defaultWidth, defaultHeight, out var columns, out var rows);
 
             var currentWidth = InventoryAccessor.GetWidth(inventory);
             var currentHeight = InventoryAccessor.GetHeight(inventory);
@@ -192,13 +219,32 @@ namespace HexChestHacks.Core
 
             if (!TryGetDefaultCapacity(container, out var defaultWidth, out var defaultHeight))
             {
+                Plugin.Log.LogWarning($"No cached default capacity found for {container.name}");
                 return;
             }
 
-            var columns = Plugin.EnableCustomChestCapacity.Value ? Plugin.Columns.Value : defaultWidth;
-            var rows = Plugin.EnableCustomChestCapacity.Value ? Plugin.Rows.Value : defaultHeight;
+            GetTargetCapacity(container, defaultWidth, defaultHeight, out var columns, out var rows);
 
-            TryResizeStorage(container, rows, columns);
+            var inventory = ContainerAccessor.GetInventory(container);
+
+            if (inventory == null)
+            {
+                return;
+            }
+
+            var customEnabled = IsCustomCapacityEnabled(container);
+
+            Plugin.Log.LogInfo(
+                $"Applying chest capacity: {container.name} | " +
+                $"Default: {defaultWidth}x{defaultHeight} | " +
+                $"Current: {InventoryAccessor.GetWidth(inventory)}x{InventoryAccessor.GetHeight(inventory)} | " +
+                $"Target: {columns}x{rows} | " +
+                $"Custom enabled: {customEnabled}");
+
+            if (!TryResizeStorage(container, rows, columns))
+            {
+                Plugin.Log.LogWarning($"Chest capacity change rejected: {container.name}");
+            }
         }
 
         internal static bool TryResizeStorage(Container container, int rows, int columns)
@@ -208,7 +254,10 @@ namespace HexChestHacks.Core
                 return false;
             }
 
-            if (!IsValidCapacity(columns, rows))
+            var customEnabled = IsCustomCapacityEnabled(container);
+
+            if (!IsValidCapacity(columns, rows) ||
+                (customEnabled && !IsValidCustomCapacity(columns, rows)))
             {
                 return false;
             }
@@ -256,6 +305,36 @@ namespace HexChestHacks.Core
             return true;
         }
 
+        private static void GetTargetCapacity(
+            Container container,
+            int defaultWidth,
+            int defaultHeight,
+            out int columns,
+            out int rows)
+        {
+            columns = defaultWidth;
+            rows = defaultHeight;
+
+            if (!IsCustomCapacityEnabled(container))
+            {
+                return;
+            }
+
+            var isWardrobe = NormalizePrefabName(container.name) == WardrobePrefabName;
+
+            columns = isWardrobe ? BepInExConfigurationSetup.WardrobeColumns.Value : BepInExConfigurationSetup.Columns.Value;
+            rows = isWardrobe ? BepInExConfigurationSetup.WardrobeRows.Value : BepInExConfigurationSetup.Rows.Value;
+        }
+
+        private static bool IsCustomCapacityEnabled(Container container)
+        {
+            var isWardrobe = NormalizePrefabName(container.name) == WardrobePrefabName;
+
+            return isWardrobe
+                ? BepInExConfigurationSetup.EnableCustomWardrobeCapacity.Value
+                : BepInExConfigurationSetup.EnableCustomChestCapacity.Value;
+        }
+
         private static bool AreItemPositionsValid(Inventory inventory, int width, int height)
         {
             foreach (var item in InventoryAccessor.GetItems(inventory))
@@ -274,8 +353,18 @@ namespace HexChestHacks.Core
 
         private static bool IsValidCapacity(int width, int height)
         {
+            return width > 0 && height > 0;
+        }
+
+        private static bool IsValidCustomCapacity(int width, int height)
+        {
             return width >= MinimumCapacity && width <= MaximumCapacity &&
                    height >= MinimumCapacity && height <= MaximumCapacity;
+        }
+
+        private static string NormalizePrefabName(string name)
+        {
+            return name.Replace("(Clone)", "").Trim();
         }
 
         private static void SetCapacity(Container container, Inventory inventory, int width, int height)

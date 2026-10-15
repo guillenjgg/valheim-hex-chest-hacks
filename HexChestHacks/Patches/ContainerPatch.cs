@@ -1,22 +1,13 @@
-﻿
-using HarmonyLib;
+﻿using HarmonyLib;
+using HexChestHacks.Core.ReflectionAccessors;
+using HexChestHacks.Core.Services;
 
 namespace HexChestHacks.Core
 {
+
     [HarmonyPatch(typeof(Container), nameof(Container.Awake))]
     internal static class ContainerPatch
     {
-        [HarmonyPrefix]
-        private static void Prefix(Container __instance)
-        {
-            if (!Constants.IsSupportedChest(__instance.name))
-            {
-                return;
-            }
-
-            ContainerService.RegisterDefaultCapacity(__instance);
-        }
-
         [HarmonyPostfix]
         private static void Postfix(Container __instance)
         {
@@ -28,6 +19,7 @@ namespace HexChestHacks.Core
             LoadedContainerService.Register(__instance);
         }
     }
+
 
     [HarmonyPatch(typeof(Container), nameof(Container.Load))]
     internal static class ContainerLoadPatch

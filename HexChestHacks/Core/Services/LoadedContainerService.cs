@@ -1,8 +1,7 @@
-﻿
+﻿using HexChestHacks.Core.ReflectionAccessors;
 using System.Collections.Generic;
-using UnityEngine;
 
-namespace HexChestHacks.Core
+namespace HexChestHacks.Core.Services
 {
     internal static class LoadedContainerService
     {

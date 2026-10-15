@@ -1,6 +1,6 @@
 ﻿using HarmonyLib;
 
-namespace HexChestHacks.Core
+namespace HexChestHacks.Core.ReflectionAccessors
 {
     internal static class ContainerAccessor
     {

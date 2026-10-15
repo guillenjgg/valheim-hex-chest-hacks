@@ -2,7 +2,7 @@
 using HarmonyLib;
 using UnityEngine.UI;
 
-namespace HexChestHacks.Core
+namespace HexChestHacks.Core.ReflectionAccessors
 {
     internal static class InventoryGridAccessor
     {

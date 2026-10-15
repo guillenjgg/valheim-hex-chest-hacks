@@ -63,6 +63,10 @@
       <HintPath>..\..\..\valheim_mod_libraries\UnityEngine.CoreModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>..\..\..\valheim_mod_libraries\UnityEngine.IMGUIModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="UnityEngine.PhysicsModule">
       <HintPath>..\..\..\valheim_mod_libraries\UnityEngine.PhysicsModule.dll</HintPath>
       <Private>False</Private>
@@ -77,14 +81,15 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Core\BepInExConfigurationSetup.cs" />
     <Compile Include="Core\Constants.cs" />
-    <Compile Include="Core\ContainerAccessor.cs" />
-    <Compile Include="Core\ContainerService.cs" />
-    <Compile Include="Core\InventoryAccessor.cs" />
-    <Compile Include="Core\InventoryGridAccessor.cs" />
-    <Compile Include="Core\InventoryGuiAccessor.cs" />
-    <Compile Include="Core\LoadedContainerService.cs" />
-    <Compile Include="Core\SnappointService.cs" />
+    <Compile Include="Core\ReflectionAccessors\ContainerAccessor.cs" />
+    <Compile Include="Core\Services\ContainerService.cs" />
+    <Compile Include="Core\ReflectionAccessors\InventoryAccessor.cs" />
+    <Compile Include="Core\ReflectionAccessors\InventoryGridAccessor.cs" />
+    <Compile Include="Core\ReflectionAccessors\InventoryGuiAccessor.cs" />
+    <Compile Include="Core\Services\LoadedContainerService.cs" />
+    <Compile Include="Core\Services\SnappointService.cs" />
     <Compile Include="Patches\ContainerInventoryUiPatch.cs" />
     <Compile Include="Patches\ContainerPatch.cs" />
     <Compile Include="Patches\ZNetScenePatch.cs" />

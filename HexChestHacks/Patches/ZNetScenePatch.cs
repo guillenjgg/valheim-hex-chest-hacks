@@ -1,14 +1,14 @@
 ﻿using HarmonyLib;
-using HexChestHacks.Core;
+using HexChestHacks.Core.Services;
 
 namespace HexChestHacks.Patches
 {
     [HarmonyPatch(typeof(ZNetScene), nameof(ZNetScene.Awake))]
     internal static class ZNetScenePatch
     {
-        [HarmonyPostfix]
         private static void Postfix(ZNetScene __instance)
         {
+            ContainerService.CacheDefaultCapacities(__instance);
             SnappointService.AddSnappoints(__instance);
         }
     }
