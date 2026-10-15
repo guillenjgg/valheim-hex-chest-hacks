@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using UnityEngine.Diagnostics;
 
 namespace HexChestHacks.Core
 {
@@ -15,8 +14,7 @@ namespace HexChestHacks.Core
             "piece_chest_grausten",
             "piece_chest_private",
             "piece_chest_barrel",
-            "piece_chest_warderobe",
-            "piece_chest_treasure"
+            "piece_chest_warderobe"
         };
 
         internal static bool IsSupportedChest(string prefabName)
@@ -28,7 +26,7 @@ namespace HexChestHacks.Core
 
             var name = prefabName.Replace("(Clone)", "").Trim();
 
-            return Constants.SupportedPrefabs.Contains(name);
+            return SupportedPrefabs.Contains(name);
         }
     }
 }

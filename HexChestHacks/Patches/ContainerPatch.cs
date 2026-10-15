@@ -9,12 +9,22 @@ namespace HexChestHacks.Core
         [HarmonyPrefix]
         private static void Prefix(Container __instance)
         {
+            if (!Constants.IsSupportedChest(__instance.name))
+            {
+                return;
+            }
+
             ContainerService.RegisterDefaultCapacity(__instance);
         }
 
         [HarmonyPostfix]
         private static void Postfix(Container __instance)
         {
+            if (!Constants.IsSupportedChest(__instance.name))
+            {
+                return;
+            }
+
             LoadedContainerService.Register(__instance);
         }
     }
@@ -25,7 +35,7 @@ namespace HexChestHacks.Core
         [HarmonyPostfix]
         private static void Postfix(Container __instance, bool __result)
         {
-            if (!__result)
+            if (!__result || !Constants.IsSupportedChest(__instance.name))
             {
                 return;
             }
@@ -40,7 +50,7 @@ namespace HexChestHacks.Core
 
             var nview = ContainerAccessor.GetNetView(__instance);
 
-            if (nview == null || !nview.IsOwner())
+            if (nview == null || !nview.IsValid() || !nview.IsOwner())
             {
                 return;
             }
@@ -56,6 +66,11 @@ namespace HexChestHacks.Core
         [HarmonyPostfix]
         private static void Postfix(Container __instance)
         {
+            if (!Constants.IsSupportedChest(__instance.name))
+            {
+                return;
+            }
+
             var nview = ContainerAccessor.GetNetView(__instance);
 
             if (nview == null || !nview.IsValid() || !nview.IsOwner())
@@ -76,7 +91,12 @@ namespace HexChestHacks.Core
         [HarmonyPrefix]
         private static void Prefix(Container __instance, bool hold)
         {
-            if (hold || !ContainerService.HasPendingShrink(__instance))
+            if (hold || !Constants.IsSupportedChest(__instance.name))
+            {
+                return;
+            }
+
+            if (!ContainerService.HasPendingShrink(__instance))
             {
                 return;
             }

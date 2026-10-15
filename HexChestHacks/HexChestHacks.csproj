@@ -36,11 +36,11 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="assembly_utils_publicized">
-      <HintPath>..\..\..\publicized_assemblies\v1.0.17\assembly_utils_publicized.dll</HintPath>
+      <HintPath>..\..\..\publicized_assemblies\v1.0.20\assembly_utils_publicized.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="assembly_valheim_publicized">
-      <HintPath>..\..\..\publicized_assemblies\v1.0.17\assembly_valheim_publicized.dll</HintPath>
+      <HintPath>..\..\..\publicized_assemblies\v1.0.20\assembly_valheim_publicized.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="BepInEx">
@@ -61,6 +61,10 @@
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>..\..\..\valheim_mod_libraries\UnityEngine.CoreModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.PhysicsModule">
+      <HintPath>..\..\..\valheim_mod_libraries\UnityEngine.PhysicsModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine.UI">
