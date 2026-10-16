@@ -1,5 +1,4 @@
-﻿
-using HarmonyLib;
+﻿using HarmonyLib;
 using UnityEngine.UI;
 
 namespace HexChestHacks.Core.ReflectionAccessors

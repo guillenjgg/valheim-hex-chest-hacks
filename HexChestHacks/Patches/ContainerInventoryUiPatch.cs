@@ -1,4 +1,5 @@
-﻿using HarmonyLib;
+﻿
+using HarmonyLib;
 using HexChestHacks.Core.ReflectionAccessors;
 using System.Collections.Generic;
 using UnityEngine;
@@ -9,6 +10,7 @@ namespace HexChestHacks.Core
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.UpdateContainer))]
     internal static class ContainerInventoryUiPatch
     {
+        private const string WardrobePrefabName = "piece_chest_warderobe";
         private const float VerticalPadding = 85f;
         private const float MinimumHeight = 150f;
 
@@ -21,12 +23,12 @@ namespace HexChestHacks.Core
 
         private static InventoryGui _cachedGui;
         private static InventoryGrid _cachedGrid;
+        private static Container _lastContainer;
 
         private static RectTransform _containerPanel;
         private static RectTransform _gridViewport;
-
-        private static ScrollRect _scrollRect;
         private static Scrollbar _scrollbar;
+        private static Graphic[] _scrollbarGraphics;
 
         private static float _originalPanelHeight;
         private static float _originalViewportHeight;
@@ -34,15 +36,10 @@ namespace HexChestHacks.Core
         private static Vector2 _originalPanelPosition;
         private static Vector2 _originalPanelPivot;
 
-        private static bool _originalScrollEnabled;
-        private static bool _originalScrollbarActive;
-
         private static readonly Dictionary<RectTransform, Vector2> ButtonPositions =
             new Dictionary<RectTransform, Vector2>();
 
         private static bool _layoutModified;
-        private static bool _scrollbarModified;
-        private static bool _lastRemoveScrollbar;
         private static int _lastRows = -1;
 
         [HarmonyPostfix]
@@ -67,9 +64,128 @@ namespace HexChestHacks.Core
             if (currentContainer == null)
             {
                 RestoreLayout();
+                RestoreScrollbar();
+
+                _lastContainer = null;
+                _lastRows = -1;
                 return;
             }
 
+            var prefabName = Utils.GetPrefabName(currentContainer.gameObject);
+
+            if (!Constants.IsSupportedChest(prefabName))
+            {
+                RestoreLayout();
+                RestoreScrollbar();
+
+                _lastContainer = null;
+                _lastRows = -1;
+                return;
+            }
+
+            var isWardrobe = prefabName == WardrobePrefabName;
+
+            var customCapacityEnabled = isWardrobe
+                ? BepInExConfigurationSetup.EnableCustomWardrobeCapacity.Value
+                : BepInExConfigurationSetup.EnableCustomChestCapacity.Value;
+
+            var removeScrollbar = BepInExConfigurationSetup.RemoveChestScrollBars.Value;
+
+            if (customCapacityEnabled || removeScrollbar)
+            {
+                ResizePanel(grid);
+            }
+            else
+            {
+                RestoreLayout();
+            }
+
+            UpdateScrollbar(removeScrollbar);
+
+            _lastContainer = currentContainer;
+        }
+
+        private static void Initialize(InventoryGui gui, InventoryGrid grid)
+        {
+            if (_cachedGui == gui &&
+                _cachedGrid == grid &&
+                _containerPanel != null &&
+                _gridViewport != null)
+            {
+                return;
+            }
+
+            RestoreLayout();
+            RestoreScrollbar();
+
+            _cachedGui = gui;
+            _cachedGrid = grid;
+
+            _containerPanel = InventoryGuiAccessor.GetContainer(gui);
+            _gridViewport = null;
+            _scrollbar = null;
+            _scrollbarGraphics = null;
+
+            if (_containerPanel == null)
+            {
+                return;
+            }
+
+            var scrollRect = grid.GetComponentInParent<ScrollRect>();
+
+            if (scrollRect != null)
+            {
+                _gridViewport = scrollRect.viewport != null
+                    ? scrollRect.viewport
+                    : scrollRect.transform as RectTransform;
+            }
+            else
+            {
+                _gridViewport = grid.transform as RectTransform;
+            }
+
+            _scrollbar = InventoryGridAccessor.GetScrollbar(grid);
+
+            if (_scrollbar != null)
+            {
+                _scrollbarGraphics = _scrollbar.GetComponentsInChildren<Graphic>(true);
+            }
+
+            if (_gridViewport == null)
+            {
+                return;
+            }
+
+            CacheOriginalLayout();
+
+            _layoutModified = false;
+            _lastContainer = null;
+            _lastRows = -1;
+        }
+
+        private static void CacheOriginalLayout()
+        {
+            _originalPanelHeight = _containerPanel.rect.height;
+            _originalViewportHeight = _gridViewport.rect.height;
+
+            _originalPanelPivot = _containerPanel.pivot;
+            _originalPanelPosition = _containerPanel.anchoredPosition;
+
+            ButtonPositions.Clear();
+
+            foreach (var buttonName in HeaderButtonNames)
+            {
+                var button = _containerPanel.Find(buttonName) as RectTransform;
+
+                if (button != null)
+                {
+                    ButtonPositions[button] = button.anchoredPosition;
+                }
+            }
+        }
+
+        private static void ResizePanel(InventoryGrid grid)
+        {
             var inventory = InventoryGridAccessor.GetInventory(grid);
 
             if (inventory == null)
@@ -84,19 +200,12 @@ namespace HexChestHacks.Core
                 return;
             }
 
-            var removeScrollbar = BepInExConfigurationSetup.RemoveChestScrollBars.Value;
-
             var elementSpace = InventoryGridAccessor.GetElementSpace(grid);
             var contentHeight = rows * elementSpace;
 
             var desiredPanelHeight = Mathf.Max(
                 MinimumHeight,
                 contentHeight + VerticalPadding);
-
-            if (!_layoutModified)
-            {
-                CacheOriginalLayout();
-            }
 
             _containerPanel.SetSizeWithCurrentAnchors(
                 RectTransform.Axis.Vertical,
@@ -108,94 +217,15 @@ namespace HexChestHacks.Core
 
             UpdateButtonPositions(desiredPanelHeight);
 
-            UpdateScrollbar(removeScrollbar);
-
             if (!_layoutModified ||
-                _lastRows != rows ||
-                _lastRemoveScrollbar != removeScrollbar)
+                _lastContainer != InventoryGuiAccessor.GetCurrentContainer(_cachedGui) ||
+                _lastRows != rows)
             {
                 grid.ResetView();
             }
 
             _lastRows = rows;
-            _lastRemoveScrollbar = removeScrollbar;
             _layoutModified = true;
-        }
-
-        private static void Initialize(InventoryGui gui, InventoryGrid grid)
-        {
-            if (_cachedGui == gui &&
-                _cachedGrid == grid &&
-                _containerPanel != null &&
-                _gridViewport != null)
-            {
-                return;
-            }
-
-            RestoreLayout();
-
-            _cachedGui = gui;
-            _cachedGrid = grid;
-
-            _containerPanel = InventoryGuiAccessor.GetContainer(gui);
-            _gridViewport = null;
-            _scrollRect = null;
-            _scrollbar = null;
-
-            if (_containerPanel == null)
-            {
-                return;
-            }
-
-            _scrollRect = grid.GetComponentInParent<ScrollRect>();
-
-            if (_scrollRect != null)
-            {
-                _gridViewport = _scrollRect.viewport != null
-                    ? _scrollRect.viewport
-                    : _scrollRect.transform as RectTransform;
-            }
-            else
-            {
-                _gridViewport = grid.transform as RectTransform;
-            }
-
-            _scrollbar = InventoryGridAccessor.GetScrollbar(grid);
-
-            CacheOriginalLayout();
-
-            _layoutModified = false;
-            _scrollbarModified = false;
-            _lastRemoveScrollbar = false;
-            _lastRows = -1;
-        }
-
-        private static void CacheOriginalLayout()
-        {
-            _originalPanelHeight = _containerPanel.rect.height;
-            _originalViewportHeight = _gridViewport.rect.height;
-
-            _originalPanelPivot = _containerPanel.pivot;
-            _originalPanelPosition = _containerPanel.anchoredPosition;
-
-            if (!_scrollbarModified)
-            {
-                _originalScrollEnabled = _scrollRect != null && _scrollRect.vertical;
-                _originalScrollbarActive = _scrollbar != null &&
-                    _scrollbar.gameObject.activeSelf;
-            }
-
-            ButtonPositions.Clear();
-
-            foreach (var buttonName in HeaderButtonNames)
-            {
-                var button = _containerPanel.Find(buttonName) as RectTransform;
-
-                if (button != null)
-                {
-                    ButtonPositions[button] = button.anchoredPosition;
-                }
-            }
         }
 
         private static void UpdateButtonPositions(float panelHeight)
@@ -224,38 +254,28 @@ namespace HexChestHacks.Core
 
         private static void UpdateScrollbar(bool removeScrollbar)
         {
-            if (removeScrollbar)
+            if (_scrollbar == null || _scrollbarGraphics == null)
             {
-                if (_scrollRect != null)
-                {
-                    _scrollRect.vertical = false;
-                }
-
-                if (_scrollbar != null)
-                {
-                    _scrollbar.gameObject.SetActive(false);
-                }
-
-                _scrollbarModified = true;
                 return;
             }
 
-            if (_scrollRect != null)
+            foreach (var graphic in _scrollbarGraphics)
             {
-                _scrollRect.vertical = _originalScrollEnabled;
+                if (graphic != null && graphic.enabled == removeScrollbar)
+                {
+                    graphic.enabled = !removeScrollbar;
+                }
             }
+        }
 
-            if (_scrollbar != null)
-            {
-                _scrollbar.gameObject.SetActive(_originalScrollbarActive);
-            }
-
-            _scrollbarModified = false;
+        private static void RestoreScrollbar()
+        {
+            UpdateScrollbar(false);
         }
 
         private static void RestoreLayout()
         {
-            if (!_layoutModified && !_scrollbarModified)
+            if (!_layoutModified)
             {
                 return;
             }
@@ -285,19 +305,7 @@ namespace HexChestHacks.Core
                 }
             }
 
-            if (_scrollRect != null)
-            {
-                _scrollRect.vertical = _originalScrollEnabled;
-            }
-
-            if (_scrollbar != null)
-            {
-                _scrollbar.gameObject.SetActive(_originalScrollbarActive);
-            }
-
             _layoutModified = false;
-            _scrollbarModified = false;
-            _lastRemoveScrollbar = false;
             _lastRows = -1;
         }
     }

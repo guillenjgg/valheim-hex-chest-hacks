@@ -1,5 +1,4 @@
-﻿
-using BepInEx.Configuration;
+﻿using BepInEx.Configuration;
 using HexChestHacks.Core.Services;
 using System;
 using UnityEngine;
