@@ -23,5 +23,18 @@ namespace HexChestHacks.Core.ReflectionAccessors
         internal static void SetHeight(Inventory inventory, int height) => Height(inventory) = height;
 
         internal static List<ItemDrop.ItemData> GetItems(Inventory inventory) => Items(inventory);
+
+        internal static void Changed(Inventory inventory)
+        {
+            var method = AccessTools.Method(typeof(Inventory), "Changed", new[] { typeof(bool), typeof(bool) });
+
+            if (method == null)
+            {
+                Plugin.Log.LogError("Inventory.Changed(bool, bool) could not be found.");
+                return;
+            }
+
+            method.Invoke(inventory, new object[] { false, false });
+        }
     }
 }

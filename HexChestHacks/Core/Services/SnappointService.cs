@@ -35,7 +35,6 @@ namespace HexChestHacks.Core.Services
 
                 if (!TryGetMeshBounds(chest.transform, out var bounds))
                 {
-                    Plugin.Log.LogWarning($"No visible meshes found: {chest.name}");
                     continue;
                 }
 

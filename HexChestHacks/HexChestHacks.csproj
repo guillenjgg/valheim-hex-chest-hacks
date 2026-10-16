@@ -81,7 +81,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Core\BepInExConfigurationSetup.cs" />
+    <Compile Include="Core\HexChestHacksConfigurationSetup.cs" />
     <Compile Include="Core\Constants.cs" />
     <Compile Include="Core\ReflectionAccessors\ContainerAccessor.cs" />
     <Compile Include="Core\Services\ContainerService.cs" />
@@ -92,6 +92,7 @@
     <Compile Include="Core\Services\SnappointService.cs" />
     <Compile Include="Patches\ContainerInventoryUiPatch.cs" />
     <Compile Include="Patches\ContainerPatch.cs" />
+    <Compile Include="Patches\InventoryTopFirstPatch.cs" />
     <Compile Include="Patches\ZNetScenePatch.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

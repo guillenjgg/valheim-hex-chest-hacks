@@ -4,7 +4,6 @@ using HexChestHacks.Core.Services;
 
 namespace HexChestHacks.Core
 {
-
     [HarmonyPatch(typeof(Container), nameof(Container.Awake))]
     internal static class ContainerPatch
     {
@@ -20,7 +19,6 @@ namespace HexChestHacks.Core
         }
     }
 
-
     [HarmonyPatch(typeof(Container), nameof(Container.Load))]
     internal static class ContainerLoadPatch
     {
@@ -32,11 +30,12 @@ namespace HexChestHacks.Core
                 return;
             }
 
+            LoadedContainerService.Register(__instance);
+
             ContainerService.RestoreSavedCapacity(__instance);
 
             if (!ContainerService.HasValidItemPositions(__instance))
             {
-                Plugin.Log.LogWarning($"Invalid item positions in {__instance.name}. Skipping resize.");
                 return;
             }
 
@@ -95,7 +94,17 @@ namespace HexChestHacks.Core
 
             MessageHud.instance?.ShowMessage(
                 MessageHud.MessageType.Center,
-                "Chest cannot shrink until all items are removed.");
+                "Chest cannot shrink until enough items are removed.");
+        }
+    }
+
+    [HarmonyPatch(typeof(Container), nameof(Container.OnDestroyed))]
+    internal static class ContainerOnDestroyedPatch
+    {
+        [HarmonyPostfix]
+        private static void Postfix(Container __instance)
+        {
+            LoadedContainerService.Unregister(__instance);
         }
     }
 }

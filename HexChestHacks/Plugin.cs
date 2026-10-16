@@ -24,7 +24,7 @@ namespace HexChestHacks
             Instance = this;
             Log = Logger;
 
-            BepInExConfigurationSetup.Init(Config);
+            HexChestHacksConfigurationSetup.Init(Config);
 
             _harmonyInstance = new Harmony(PluginGuid);
             _harmonyInstance.PatchAll(Assembly.GetExecutingAssembly());
@@ -36,7 +36,7 @@ namespace HexChestHacks
         {
             Log.LogInfo($"{PluginName} v{PluginVersion} unloaded.");
 
-            BepInExConfigurationSetup.Dispose();
+            HexChestHacksConfigurationSetup.Dispose();
 
             _harmonyInstance?.UnpatchSelf();
             _harmonyInstance = null;

@@ -49,13 +49,10 @@ namespace HexChestHacks.Core.Services
 
                 if (!IsValidCapacity(width, height))
                 {
-                    Plugin.Log.LogWarning($"Invalid default capacity for {prefabName}: {width}x{height}");
                     continue;
                 }
 
                 DefaultCapacities[prefabName] = new Vector2Int(width, height);
-
-                Plugin.Log.LogInfo($"Cached default chest capacity: {prefabName} | {width}x{height}");
             }
         }
 
@@ -119,12 +116,12 @@ namespace HexChestHacks.Core.Services
 
             GetTargetCapacity(container, defaultWidth, defaultHeight, out var columns, out var rows);
 
-            var currentWidth = InventoryAccessor.GetWidth(inventory);
-            var currentHeight = InventoryAccessor.GetHeight(inventory);
+            if (!IsValidCapacity(columns, rows))
+            {
+                return false;
+            }
 
-            var shrinking = columns < currentWidth || rows < currentHeight;
-
-            return shrinking && InventoryAccessor.GetItems(inventory).Count > 0;
+            return InventoryAccessor.GetItems(inventory).Count > columns * rows;
         }
 
         internal static bool RestoreSavedCapacity(Container container)
@@ -159,7 +156,6 @@ namespace HexChestHacks.Core.Services
 
             if (!AreItemPositionsValid(inventory, width, height))
             {
-                Plugin.Log.LogWarning($"Saved chest capacity contains invalid item positions: {container.name}");
                 return false;
             }
 
@@ -203,7 +199,6 @@ namespace HexChestHacks.Core.Services
 
             if (!IsValidCapacity(width, height) || !HasValidItemPositions(container))
             {
-                Plugin.Log.LogWarning($"Cannot initialize chest capacity: {container.name}");
                 return;
             }
 
@@ -219,7 +214,6 @@ namespace HexChestHacks.Core.Services
 
             if (!TryGetDefaultCapacity(container, out var defaultWidth, out var defaultHeight))
             {
-                Plugin.Log.LogWarning($"No cached default capacity found for {container.name}");
                 return;
             }
 
@@ -233,18 +227,6 @@ namespace HexChestHacks.Core.Services
             }
 
             var customEnabled = IsCustomCapacityEnabled(container);
-
-            Plugin.Log.LogInfo(
-                $"Applying chest capacity: {container.name} | " +
-                $"Default: {defaultWidth}x{defaultHeight} | " +
-                $"Current: {InventoryAccessor.GetWidth(inventory)}x{InventoryAccessor.GetHeight(inventory)} | " +
-                $"Target: {columns}x{rows} | " +
-                $"Custom enabled: {customEnabled}");
-
-            if (!TryResizeStorage(container, rows, columns))
-            {
-                Plugin.Log.LogWarning($"Chest capacity change rejected: {container.name}");
-            }
         }
 
         internal static bool TryResizeStorage(Container container, int rows, int columns)
@@ -279,7 +261,6 @@ namespace HexChestHacks.Core.Services
 
             if (!HasValidItemPositions(container))
             {
-                Plugin.Log.LogWarning($"Cannot resize chest with invalid item positions: {container.name}");
                 return false;
             }
 
@@ -292,15 +273,22 @@ namespace HexChestHacks.Core.Services
                 return true;
             }
 
-            var shrinking = columns < currentWidth || rows < currentHeight;
+            var items = InventoryAccessor.GetItems(inventory);
 
-            if (shrinking && InventoryAccessor.GetItems(inventory).Count > 0)
+            if (items.Count > columns * rows)
+            {
+                return false;
+            }
+
+            if (!TryRepositionItems(inventory, columns, rows, out var repositioned))
             {
                 return false;
             }
 
             SetCapacity(container, inventory, columns, rows);
             SaveCapacity(zdo, columns, rows);
+
+            InventoryAccessor.Changed(inventory);
 
             return true;
         }
@@ -322,8 +310,8 @@ namespace HexChestHacks.Core.Services
 
             var isWardrobe = NormalizePrefabName(container.name) == WardrobePrefabName;
 
-            columns = isWardrobe ? BepInExConfigurationSetup.WardrobeColumns.Value : BepInExConfigurationSetup.Columns.Value;
-            rows = isWardrobe ? BepInExConfigurationSetup.WardrobeRows.Value : BepInExConfigurationSetup.Rows.Value;
+            columns = isWardrobe ? HexChestHacksConfigurationSetup.WardrobeColumns.Value : HexChestHacksConfigurationSetup.Columns.Value;
+            rows = isWardrobe ? HexChestHacksConfigurationSetup.WardrobeRows.Value : HexChestHacksConfigurationSetup.Rows.Value;
         }
 
         private static bool IsCustomCapacityEnabled(Container container)
@@ -331,22 +319,95 @@ namespace HexChestHacks.Core.Services
             var isWardrobe = NormalizePrefabName(container.name) == WardrobePrefabName;
 
             return isWardrobe
-                ? BepInExConfigurationSetup.EnableCustomWardrobeCapacity.Value
-                : BepInExConfigurationSetup.EnableCustomChestCapacity.Value;
+                ? HexChestHacksConfigurationSetup.EnableCustomWardrobeCapacity.Value
+                : HexChestHacksConfigurationSetup.EnableCustomChestCapacity.Value;
         }
 
         private static bool AreItemPositionsValid(Inventory inventory, int width, int height)
         {
+            if (!IsValidCapacity(width, height))
+            {
+                return false;
+            }
+
+            var occupied = new bool[width, height];
+
             foreach (var item in InventoryAccessor.GetItems(inventory))
             {
                 var position = item.m_gridPos;
 
                 if (position.x < 0 || position.x >= width ||
-                    position.y < 0 || position.y >= height)
+                    position.y < 0 || position.y >= height ||
+                    occupied[position.x, position.y])
                 {
                     return false;
                 }
+
+                occupied[position.x, position.y] = true;
             }
+
+            return true;
+        }
+
+        private static bool TryRepositionItems(Inventory inventory, int columns, int rows, out bool repositioned)
+        {
+            repositioned = false;
+
+            var items = InventoryAccessor.GetItems(inventory);
+
+            if (items.Count > columns * rows)
+            {
+                return false;
+            }
+
+            var occupied = new bool[columns, rows];
+            var displaced = new List<ItemDrop.ItemData>();
+
+            foreach (var item in items)
+            {
+                var position = item.m_gridPos;
+
+                if (position.x >= 0 && position.x < columns &&
+                    position.y >= 0 && position.y < rows &&
+                    !occupied[position.x, position.y])
+                {
+                    occupied[position.x, position.y] = true;
+                }
+                else
+                {
+                    displaced.Add(item);
+                }
+            }
+
+            if (displaced.Count == 0)
+            {
+                return true;
+            }
+
+            var available = new List<Vector2i>();
+
+            for (var y = 0; y < rows; y++)
+            {
+                for (var x = 0; x < columns; x++)
+                {
+                    if (!occupied[x, y])
+                    {
+                        available.Add(new Vector2i(x, y));
+                    }
+                }
+            }
+
+            if (available.Count < displaced.Count)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < displaced.Count; i++)
+            {
+                displaced[i].m_gridPos = available[i];
+            }
+
+            repositioned = true;
 
             return true;
         }

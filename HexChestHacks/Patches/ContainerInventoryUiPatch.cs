@@ -86,10 +86,10 @@ namespace HexChestHacks.Core
             var isWardrobe = prefabName == WardrobePrefabName;
 
             var customCapacityEnabled = isWardrobe
-                ? BepInExConfigurationSetup.EnableCustomWardrobeCapacity.Value
-                : BepInExConfigurationSetup.EnableCustomChestCapacity.Value;
+                ? HexChestHacksConfigurationSetup.EnableCustomWardrobeCapacity.Value
+                : HexChestHacksConfigurationSetup.EnableCustomChestCapacity.Value;
 
-            var removeScrollbar = BepInExConfigurationSetup.RemoveChestScrollBars.Value;
+            var removeScrollbar = HexChestHacksConfigurationSetup.RemoveChestScrollBars.Value;
 
             if (customCapacityEnabled || removeScrollbar)
             {
