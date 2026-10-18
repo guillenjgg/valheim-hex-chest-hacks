@@ -25,14 +25,19 @@ namespace HexChestHacks.Core
         [HarmonyPostfix]
         private static void Postfix(Container __instance, bool __result)
         {
-            if (!__result || !Constants.IsSupportedChest(__instance.name))
+            if (!Constants.IsSupportedChest(__instance.name))
+            {
+                return;
+            }
+
+            if (!__result)
             {
                 return;
             }
 
             LoadedContainerService.Register(__instance);
 
-            ContainerService.RestoreSavedCapacity(__instance);
+            var restored = ContainerService.RestoreSavedCapacity(__instance);
 
             if (!ContainerService.HasValidItemPositions(__instance))
             {
@@ -41,7 +46,12 @@ namespace HexChestHacks.Core
 
             var nview = ContainerAccessor.GetNetView(__instance);
 
-            if (nview == null || !nview.IsValid() || !nview.IsOwner())
+            if (nview == null || !nview.IsValid())
+            {
+                return;
+            }
+
+            if (!nview.IsOwner())
             {
                 return;
             }

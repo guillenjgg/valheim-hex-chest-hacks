@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.1.1
+
+### Fixed
+- Chest inventory now correctly updates
+
 ## v1.1.0
 
 ### Added
