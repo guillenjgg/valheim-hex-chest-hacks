@@ -219,14 +219,7 @@ namespace HexChestHacks.Core.Services
 
             GetTargetCapacity(container, defaultWidth, defaultHeight, out var columns, out var rows);
 
-            var inventory = ContainerAccessor.GetInventory(container);
-
-            if (inventory == null)
-            {
-                return;
-            }
-
-            var customEnabled = IsCustomCapacityEnabled(container);
+            TryResizeStorage(container, rows, columns);
         }
 
         internal static bool TryResizeStorage(Container container, int rows, int columns)

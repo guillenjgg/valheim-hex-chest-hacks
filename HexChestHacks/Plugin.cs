@@ -12,7 +12,7 @@ namespace HexChestHacks
     {
         private const string PluginGuid = "com.hex.chesthacks";
         private const string PluginName = "HexChestHacks";
-        private const string PluginVersion = "1.1.0";
+        private const string PluginVersion = "1.1.1";
 
         private Harmony _harmonyInstance;
 
