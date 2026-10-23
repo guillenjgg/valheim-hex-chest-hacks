@@ -1,5 +1,4 @@
-﻿
-using HarmonyLib;
+﻿using HarmonyLib;
 using HexChestHacks.Core.ReflectionAccessors;
 using System.Collections.Generic;
 using UnityEngine;
@@ -63,11 +62,6 @@ namespace HexChestHacks.Core
 
             if (currentContainer == null)
             {
-                RestoreLayout();
-                RestoreScrollbar();
-
-                _lastContainer = null;
-                _lastRows = -1;
                 return;
             }
 

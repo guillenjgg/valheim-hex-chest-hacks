@@ -60,10 +60,10 @@ namespace HexChestHacks.Core.Services
         // Create four snap points at the corners of the chest's.
         private static void AddChestSnappoints(Transform root, Bounds bounds)
         {
-            CreateSnappoint(root, "top_left", new Vector3(bounds.min.x, 0f, bounds.max.z));
-            CreateSnappoint(root, "top_right", new Vector3(bounds.max.x, 0f, bounds.max.z));
-            CreateSnappoint(root, "bottom_left", new Vector3(bounds.min.x, 0f, bounds.min.z));
-            CreateSnappoint(root, "bottom_right", new Vector3(bounds.max.x, 0f, bounds.min.z));
+            CreateSnappoint(root, "back_left", new Vector3(bounds.min.x, 0f, bounds.max.z));
+            CreateSnappoint(root, "back_right", new Vector3(bounds.max.x, 0f, bounds.max.z));
+            CreateSnappoint(root, "front_left", new Vector3(bounds.min.x, 0f, bounds.min.z));
+            CreateSnappoint(root, "front_right", new Vector3(bounds.max.x, 0f, bounds.min.z));
         }
 
         // Create two additional snap points for stacking chests vertically.
@@ -74,6 +74,7 @@ namespace HexChestHacks.Core.Services
         }
 
         // I had to reference the Unity API documenation to figure out how to calculate the bounds
+        // You could add the snappoints to the colliders, but using mesh bounds makes the snapping feel tighter
         // https://docs.unity3d.com/6000.0/Documentation/ScriptReference/Mesh.html
         private static bool TryGetMeshBounds(Transform root, out Bounds bounds)
         {
@@ -88,7 +89,7 @@ namespace HexChestHacks.Core.Services
                     continue;
                 }
 
-                // Only include meshes that are actually rendered.
+                // Only include meshes with enabled renderers.
                 var renderer = meshFilter.GetComponent<MeshRenderer>();
 
                 if (renderer == null || !renderer.enabled || meshFilter.sharedMesh == null)

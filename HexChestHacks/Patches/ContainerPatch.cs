@@ -7,6 +7,12 @@ namespace HexChestHacks.Core
     [HarmonyPatch(typeof(Container), nameof(Container.Awake))]
     internal static class ContainerPatch
     {
+        [HarmonyPrefix]
+        private static void Prefix(Container __instance)
+        {
+            ContainerService.RestoreSavedDimensions(__instance);
+        }
+
         [HarmonyPostfix]
         private static void Postfix(Container __instance)
         {
@@ -22,22 +28,33 @@ namespace HexChestHacks.Core
     [HarmonyPatch(typeof(Container), nameof(Container.Load))]
     internal static class ContainerLoadPatch
     {
-        [HarmonyPostfix]
-        private static void Postfix(Container __instance, bool __result)
+        [HarmonyPrefix]
+        private static void Prefix(Container __instance)
         {
             if (!Constants.IsSupportedChest(__instance.name))
             {
                 return;
             }
 
-            if (!__result)
+            var nview = ContainerAccessor.GetNetView(__instance);
+
+            if (nview.GetZDO().DataRevision == ContainerAccessor.GetLastRevision(__instance) || ContainerAccessor.GetInUse(__instance))
+            {
+                return;
+            }
+
+            ContainerService.RestoreSavedCapacity(__instance);
+        }
+
+        [HarmonyPostfix]
+        private static void Postfix(Container __instance, bool __result)
+        {
+            if (!Constants.IsSupportedChest(__instance.name) || !__result)
             {
                 return;
             }
 
             LoadedContainerService.Register(__instance);
-
-            var restored = ContainerService.RestoreSavedCapacity(__instance);
 
             if (!ContainerService.HasValidItemPositions(__instance))
             {
@@ -46,12 +63,7 @@ namespace HexChestHacks.Core
 
             var nview = ContainerAccessor.GetNetView(__instance);
 
-            if (nview == null || !nview.IsValid())
-            {
-                return;
-            }
-
-            if (!nview.IsOwner())
+            if (nview == null || !nview.IsValid() || !nview.IsOwner())
             {
                 return;
             }
