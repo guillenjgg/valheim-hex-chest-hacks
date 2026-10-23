@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.1.2
+
+### Fixed
+- Chest inventory dimensions not being restored correctly when loading containers
+- Chest inventory UI clipping during the closing animation
+
 ## v1.1.1
 
 ### Fixed

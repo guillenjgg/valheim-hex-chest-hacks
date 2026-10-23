@@ -154,11 +154,6 @@ namespace HexChestHacks.Core.Services
                 return false;
             }
 
-            if (!AreItemPositionsValid(inventory, width, height))
-            {
-                return false;
-            }
-
             SetCapacity(container, inventory, width, height);
 
             return true;
@@ -284,6 +279,36 @@ namespace HexChestHacks.Core.Services
             InventoryAccessor.Changed(inventory);
 
             return true;
+        }
+
+        internal static void RestoreSavedDimensions(Container container)
+        {
+            if (!Constants.IsSupportedChest(container.name))
+            {
+                return;
+            }
+
+            var nview = container.m_rootObjectOverride
+                ? container.m_rootObjectOverride.GetComponent<ZNetView>()
+                : container.GetComponent<ZNetView>();
+
+            var zdo = nview.GetZDO();
+
+            if (zdo == null)
+            {
+                return;
+            }
+
+            var width = zdo.GetInt(WidthKey, 0);
+            var height = zdo.GetInt(HeightKey, 0);
+
+            if (!IsValidCapacity(width, height))
+            {
+                return;
+            }
+
+            ContainerAccessor.SetWidth(container, width);
+            ContainerAccessor.SetHeight(container, height);
         }
 
         private static void GetTargetCapacity(
