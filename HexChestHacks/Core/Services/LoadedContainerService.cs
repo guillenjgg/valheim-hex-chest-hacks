@@ -12,7 +12,7 @@ namespace HexChestHacks.Core.Services
 
         internal static void Register(Container container)
         {
-            if (container == null || !Constants.IsSupportedChest(container.name))
+            if (container == null || !Constants.IsSupportedContainer(container))
             {
                 return;
             }
@@ -61,7 +61,7 @@ namespace HexChestHacks.Core.Services
                 return false;
             }
 
-            if (container == null || !Constants.IsSupportedChest(container.name))
+            if (container == null || !Constants.IsSupportedContainer(container))
             {
                 InventoryContainers.Remove(inventory);
                 container = null;

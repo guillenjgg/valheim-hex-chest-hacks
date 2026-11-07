@@ -10,6 +10,10 @@ namespace HexChestHacks.Core
         private const string GeneralSection = "1 - General";
         private const string ChestSection = "2 - Standard Chest Inventory";
         private const string WardrobeSection = "3 - Wardrobe Inventory";
+        private const string CartSection = "4 - Cart Inventory";
+        internal static ConfigEntry<bool> EnableCustomCartCapacity;
+        internal static ConfigEntry<int> CartColumns;
+        internal static ConfigEntry<int> CartRows;
 
         internal static ConfigEntry<bool> EnableCustomChestCapacity;
         internal static ConfigEntry<bool> EnableCustomWardrobeCapacity;
@@ -23,6 +27,16 @@ namespace HexChestHacks.Core
 
         internal static void Init(ConfigFile config)
         {
+            EnableCustomCartCapacity = config.Bind(CartSection, "EnableCustomCartCapacity", false,
+                new ConfigDescription("Enable custom cart capacity.", null,
+                    new ConfigurationManagerAttributes { Order = 3 }));
+            config.Remove(new ConfigDefinition(GeneralSection, "EnableCustomCartCapacity"));
+            CartColumns = config.Bind(CartSection, "CartColumns", 6,
+                new ConfigDescription("Number of cart inventory columns.", new AcceptableValueRange<int>(1, 10),
+                    new ConfigurationManagerAttributes { Order = 2, HideDefaultButton = true }));
+            CartRows = config.Bind(CartSection, "CartRows", 3,
+                new ConfigDescription("Number of cart inventory rows.", new AcceptableValueRange<int>(1, 10),
+                    new ConfigurationManagerAttributes { Order = 1, HideDefaultButton = true }));
             var oldChestEnabled = ReadOldValue(config, "Standard Chest Inventory", "EnableCustomChestCapacity", false);
             var oldChestColumns = ReadOldValue(config, "Standard Chest Inventory", "Columns", 5);
             var oldChestRows = ReadOldValue(config, "Standard Chest Inventory", "Rows", 6);
@@ -41,7 +55,7 @@ namespace HexChestHacks.Core
                 new ConfigDescription(
                     "Enable custom chest capacity.",
                     null,
-                    new ConfigurationManagerAttributes { Order = 5 }));
+                    new ConfigurationManagerAttributes { Order = 6 }));
 
             EnableCustomWardrobeCapacity = config.Bind(
                 GeneralSection,
@@ -50,14 +64,14 @@ namespace HexChestHacks.Core
                 new ConfigDescription(
                     "Enable custom wardrobe capacity.",
                     null,
-                    new ConfigurationManagerAttributes { Order = 4 }));
+                    new ConfigurationManagerAttributes { Order = 5 }));
 
             RemoveChestScrollBars = config.Bind(
                 GeneralSection,
                 "RemoveChestScrollBars",
                 oldScrollBars,
                 new ConfigDescription(
-                    "Remove scrollbars from supported chest and wardrobe inventories.",
+                    "Remove scrollbars from supported chest, wardrobe and cart inventories.",
                     null,
                     new ConfigurationManagerAttributes
                     {
@@ -83,7 +97,7 @@ namespace HexChestHacks.Core
                 "RestoreVanillaChestSizes",
                 false,
                 new ConfigDescription(
-                    "Restore supported chests and wardrobes to their original vanilla dimensions.",
+                    "Restore supported chests, wardrobes and carts to their original vanilla dimensions.",
                     null,
                     new ConfigurationManagerAttributes
                     {
@@ -153,6 +167,10 @@ namespace HexChestHacks.Core
             RemoveOldEntries(config);
             config.Save();
 
+            EnableCustomCartCapacity.SettingChanged += ConfigChange;
+            CartColumns.SettingChanged += ConfigChange;
+            CartRows.SettingChanged += ConfigChange;
+
             EnableCustomChestCapacity.SettingChanged += ConfigChange;
             EnableCustomWardrobeCapacity.SettingChanged += ConfigChange;
             Columns.SettingChanged += ConfigChange;
@@ -163,6 +181,9 @@ namespace HexChestHacks.Core
 
         internal static void Dispose()
         {
+            EnableCustomCartCapacity.SettingChanged -= ConfigChange;
+            CartColumns.SettingChanged -= ConfigChange;
+            CartRows.SettingChanged -= ConfigChange;
             EnableCustomChestCapacity.SettingChanged -= ConfigChange;
             EnableCustomWardrobeCapacity.SettingChanged -= ConfigChange;
             Columns.SettingChanged -= ConfigChange;
@@ -210,6 +231,8 @@ namespace HexChestHacks.Core
         {
             var chestEnabled = EnableCustomChestCapacity.Value;
             var wardrobeEnabled = EnableCustomWardrobeCapacity.Value;
+            var cartEnabled = EnableCustomCartCapacity.Value;
+            if (cartEnabled) EnableCustomCartCapacity.Value = false;
 
             if (chestEnabled)
             {
@@ -221,7 +244,7 @@ namespace HexChestHacks.Core
                 EnableCustomWardrobeCapacity.Value = false;
             }
 
-            if (!chestEnabled && !wardrobeEnabled)
+            if (!chestEnabled && !wardrobeEnabled && !cartEnabled)
             {
                 LoadedContainerService.ApplyConfiguration();
             }

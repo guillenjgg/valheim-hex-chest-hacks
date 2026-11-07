@@ -12,7 +12,7 @@ namespace HexChestHacks
     {
         private const string PluginGuid = "com.hex.chesthacks";
         private const string PluginName = "HexChestHacks";
-        private const string PluginVersion = "1.1.2";
+        private const string PluginVersion = "1.1.3";
 
         private Harmony _harmonyInstance;
 
@@ -23,13 +23,18 @@ namespace HexChestHacks
         {
             Instance = this;
             Log = Logger;
-
+            
             HexChestHacksConfigurationSetup.Init(Config);
 
             _harmonyInstance = new Harmony(PluginGuid);
             _harmonyInstance.PatchAll(Assembly.GetExecutingAssembly());
 
             Log.LogInfo($"{PluginName} v{PluginVersion} loaded.");
+        }
+
+        private void LateUpdate()
+        {
+            ContainerInventoryUiPatch.RefreshLayout();
         }
 
         private void OnDestroy()

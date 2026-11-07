@@ -8,7 +8,7 @@ namespace HexChestHacks.Core.Services
         {
             foreach (var prefab in zNetScene.m_prefabs)
             {
-                if (prefab == null || !Constants.IsSupportedChest(prefab.name))
+                if (prefab == null || prefab.name == Constants.CartPrefab || !Constants.IsSupportedChest(prefab.name))
                 {
                     continue;
                 }
