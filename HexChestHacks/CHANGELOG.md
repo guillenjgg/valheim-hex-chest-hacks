@@ -3,9 +3,13 @@
 ## v1.1.3
 
 ### Fixed
-- Chest inventory window
+- Chest and wardrobe windows overlapping expanded player inventories or extending below the screen.
+- Inventory columns being clipped when increasing container capacity, including 10 × 10 inventories.
+- Scrollbar positioning and spacing when re-enabling scrollbars or resizing container inventories.
 
 ### Changed
+- Container windows now account for player inventory size, including additional rows unlocked through game progression.
+- With scrollbars removed, container windows automatically scale to keep all rows and columns visible on screen.
 - Compiled with Valheim `v1.0.21`
 - Updated BepInEx dependency `denikson-BepInExPack_Valheim-5.4.2360`
 

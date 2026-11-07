@@ -23,13 +23,18 @@ namespace HexChestHacks
         {
             Instance = this;
             Log = Logger;
-
+            
             HexChestHacksConfigurationSetup.Init(Config);
 
             _harmonyInstance = new Harmony(PluginGuid);
             _harmonyInstance.PatchAll(Assembly.GetExecutingAssembly());
 
             Log.LogInfo($"{PluginName} v{PluginVersion} loaded.");
+        }
+
+        private void LateUpdate()
+        {
+            ContainerInventoryUiPatch.RefreshLayout();
         }
 
         private void OnDestroy()
