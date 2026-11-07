@@ -2,6 +2,9 @@
 
 ## v1.1.3
 
+### Added
+- Support for carts custom inventory size
+
 ### Fixed
 - Chest and wardrobe windows overlapping expanded player inventories or extending below the screen.
 - Inventory columns being clipped when increasing container capacity, including 10 × 10 inventories.

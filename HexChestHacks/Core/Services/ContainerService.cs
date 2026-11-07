@@ -30,7 +30,7 @@ namespace HexChestHacks.Core.Services
                     continue;
                 }
 
-                var container = prefab.GetComponent<Container>();
+                var container = prefab.GetComponentInChildren<Container>(true);
 
                 if (container == null)
                 {
@@ -61,12 +61,12 @@ namespace HexChestHacks.Core.Services
             width = 0;
             height = 0;
 
-            if (container == null || !Constants.IsSupportedChest(container.name))
+            if (container == null || !Constants.IsSupportedContainer(container))
             {
                 return false;
             }
 
-            var prefabName = NormalizePrefabName(container.name);
+            var prefabName = Constants.GetPrefabName(container);
 
             if (!DefaultCapacities.TryGetValue(prefabName, out var capacity))
             {
@@ -126,7 +126,7 @@ namespace HexChestHacks.Core.Services
 
         internal static bool RestoreSavedCapacity(Container container)
         {
-            if (container == null || !Constants.IsSupportedChest(container.name))
+            if (container == null || !Constants.IsSupportedContainer(container))
             {
                 return false;
             }
@@ -161,7 +161,7 @@ namespace HexChestHacks.Core.Services
 
         internal static void InitializeSavedCapacity(Container container)
         {
-            if (container == null || !Constants.IsSupportedChest(container.name))
+            if (container == null || !Constants.IsSupportedContainer(container))
             {
                 return;
             }
@@ -219,7 +219,7 @@ namespace HexChestHacks.Core.Services
 
         internal static bool TryResizeStorage(Container container, int rows, int columns)
         {
-            if (container == null || !Constants.IsSupportedChest(container.name))
+            if (container == null || !Constants.IsSupportedContainer(container))
             {
                 return false;
             }
@@ -283,7 +283,7 @@ namespace HexChestHacks.Core.Services
 
         internal static void RestoreSavedDimensions(Container container)
         {
-            if (!Constants.IsSupportedChest(container.name))
+            if (!Constants.IsSupportedContainer(container))
             {
                 return;
             }
@@ -291,6 +291,8 @@ namespace HexChestHacks.Core.Services
             var nview = container.m_rootObjectOverride
                 ? container.m_rootObjectOverride.GetComponent<ZNetView>()
                 : container.GetComponent<ZNetView>();
+
+            if (nview == null) return;
 
             var zdo = nview.GetZDO();
 
@@ -326,7 +328,14 @@ namespace HexChestHacks.Core.Services
                 return;
             }
 
-            var isWardrobe = NormalizePrefabName(container.name) == WardrobePrefabName;
+            var isWardrobe = Constants.GetPrefabName(container) == WardrobePrefabName;
+
+            if (Constants.GetPrefabName(container) == Constants.CartPrefab)
+            {
+                columns = HexChestHacksConfigurationSetup.CartColumns.Value;
+                rows = HexChestHacksConfigurationSetup.CartRows.Value;
+                return;
+            }
 
             columns = isWardrobe ? HexChestHacksConfigurationSetup.WardrobeColumns.Value : HexChestHacksConfigurationSetup.Columns.Value;
             rows = isWardrobe ? HexChestHacksConfigurationSetup.WardrobeRows.Value : HexChestHacksConfigurationSetup.Rows.Value;
@@ -334,7 +343,9 @@ namespace HexChestHacks.Core.Services
 
         private static bool IsCustomCapacityEnabled(Container container)
         {
-            var isWardrobe = NormalizePrefabName(container.name) == WardrobePrefabName;
+            if (Constants.GetPrefabName(container) == Constants.CartPrefab)
+                return HexChestHacksConfigurationSetup.EnableCustomCartCapacity.Value;
+            var isWardrobe = Constants.GetPrefabName(container) == WardrobePrefabName;
 
             return isWardrobe
                 ? HexChestHacksConfigurationSetup.EnableCustomWardrobeCapacity.Value

@@ -5,6 +5,18 @@ namespace HexChestHacks.Core
     internal static class Constants
     {
         internal const string TreasureChestPrefab = "piece_chest_treasure";
+        internal const string CartPrefab = "Cart";
+
+        internal static string GetPrefabName(Container container)
+        {
+            if (container == null) return string.Empty;
+            var root = container.m_rootObjectOverride != null
+                ? container.m_rootObjectOverride.gameObject : container.gameObject;
+            return Utils.GetPrefabName(root);
+        }
+
+        internal static bool IsSupportedContainer(Container container) =>
+            IsSupportedChest(GetPrefabName(container));
 
         internal static readonly HashSet<string> SupportedPrefabs = new HashSet<string>
         {
@@ -14,7 +26,8 @@ namespace HexChestHacks.Core
             "piece_chest_grausten",
             "piece_chest_private",
             "piece_chest_barrel",
-            "piece_chest_warderobe"
+            "piece_chest_warderobe",
+            CartPrefab
         };
 
         internal static bool IsSupportedChest(string prefabName)

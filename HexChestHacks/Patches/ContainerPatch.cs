@@ -16,7 +16,7 @@ namespace HexChestHacks.Core
         [HarmonyPostfix]
         private static void Postfix(Container __instance)
         {
-            if (!Constants.IsSupportedChest(__instance.name))
+            if (!Constants.IsSupportedContainer(__instance))
             {
                 return;
             }
@@ -31,7 +31,7 @@ namespace HexChestHacks.Core
         [HarmonyPrefix]
         private static void Prefix(Container __instance)
         {
-            if (!Constants.IsSupportedChest(__instance.name))
+            if (!Constants.IsSupportedContainer(__instance))
             {
                 return;
             }
@@ -49,7 +49,7 @@ namespace HexChestHacks.Core
         [HarmonyPostfix]
         private static void Postfix(Container __instance, bool __result)
         {
-            if (!Constants.IsSupportedChest(__instance.name) || !__result)
+            if (!Constants.IsSupportedContainer(__instance) || !__result)
             {
                 return;
             }
@@ -79,7 +79,7 @@ namespace HexChestHacks.Core
         [HarmonyPostfix]
         private static void Postfix(Container __instance)
         {
-            if (!Constants.IsSupportedChest(__instance.name))
+            if (!Constants.IsSupportedContainer(__instance))
             {
                 return;
             }
@@ -104,7 +104,7 @@ namespace HexChestHacks.Core
         [HarmonyPrefix]
         private static void Prefix(Container __instance, bool hold)
         {
-            if (hold || !Constants.IsSupportedChest(__instance.name))
+            if (hold || !Constants.IsSupportedContainer(__instance))
             {
                 return;
             }

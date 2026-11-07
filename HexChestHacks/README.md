@@ -1,7 +1,7 @@
 # HexChestHacks
 Adds snap points to chests and barrels, allowing you to neatly arrange them side by side, front to back, or vertically.
 
-Customize storage capacity for chests and wardrobes.
+Customize storage capacity for chests, wardrobes and carts. Carts have independent capacity settings, defaulting to their vanilla 6 × 3 dimensions, with custom capacity disabled by default.
 
 Option to remove inventory scrollbars and display all storage slots on a single page.
 

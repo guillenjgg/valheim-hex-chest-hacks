@@ -87,7 +87,7 @@ namespace HexChestHacks.Core
                 return;
             }
 
-            var prefabName = Utils.GetPrefabName(currentContainer.gameObject);
+            var prefabName = Constants.GetPrefabName(currentContainer);
 
             if (!Constants.IsSupportedChest(prefabName))
             {
@@ -103,7 +103,9 @@ namespace HexChestHacks.Core
 
             var customCapacityEnabled = isWardrobe
                 ? HexChestHacksConfigurationSetup.EnableCustomWardrobeCapacity.Value
-                : HexChestHacksConfigurationSetup.EnableCustomChestCapacity.Value;
+                : prefabName == Constants.CartPrefab
+                    ? HexChestHacksConfigurationSetup.EnableCustomCartCapacity.Value
+                    : HexChestHacksConfigurationSetup.EnableCustomChestCapacity.Value;
 
             var removeScrollbar = HexChestHacksConfigurationSetup.RemoveChestScrollBars.Value;
 
