@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.1.3
+
+### Fixed
+- Chest inventory window
+
+### Changed
+- Compiled with Valheim `v1.0.21`
+- Updated BepInEx dependency `denikson-BepInExPack_Valheim-5.4.2360`
+
 ## v1.1.2
 
 ### Fixed
